@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron/renderer');
+const { webcrypto } = require('crypto');
 
 const deferredCallbacks = new Map();
+
 contextBridge.exposeInMainWorld('electronBridge', {
   addFocusListener: callback => {
     const deferredCallback = () => callback();
@@ -16,3 +18,10 @@ contextBridge.exposeInMainWorld('electronBridge', {
     ipcRenderer.send('wipe-device-data');
   },
 });
+
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: webcrypto,
+    writable: false,
+  });
+}
