@@ -39,7 +39,7 @@ function createWindow() {
     darkTheme: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      sandbox: true,
+      sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true,
