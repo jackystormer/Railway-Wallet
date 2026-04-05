@@ -1,4 +1,5 @@
 const CracoAlias = require('craco-alias');
+const path = require('path');
 const webpack = require('webpack');
 const {
   addAfterLoader,
@@ -6,11 +7,8 @@ const {
   removeLoaders,
   loaderByName,
 } = require('@craco/craco');
-
 const { EsbuildPlugin } = require('esbuild-loader');
-
 const { log } = console;
-
 module.exports = {
   plugins: [
     {
@@ -48,22 +46,19 @@ module.exports = {
         constants: require.resolve('constants-browserify'),
         zlib: require.resolve('browserify-zlib'),
       };
-
       config.plugins.push(
         new webpack.ProvidePlugin({
           process: 'process/browser',
           Buffer: ['buffer', 'Buffer'],
         }),
       );
-
       config.module.rules.push({
-        test: /assets\/libs\/snarkjs\.min\.js$/,
+        include: path.resolve(__dirname, 'src/assets/libs/snarkjs.min.js'),
         loader: 'exports-loader',
         options: {
           exports: 'default snarkjs',
         },
       });
-
       const esbuildLoader = {
         test: /\.(cjs|js|mjs|jsx|ts|tsx)$/,
         loader: 'esbuild-loader',
@@ -75,30 +70,24 @@ module.exports = {
         },
       };
       replaceBabel(config, esbuildLoader);
-
       config.optimization = {
         splitChunks: {
           chunks: isDev ? 'async' : 'initial',
         },
       };
-
       return config;
     },
   },
 };
-
 const replaceBabel = (config, loader, onlySrc = false) => {
   log(`replacing babel-loader with ${loader.loader}`);
   const { matches } = getLoaders(config, loaderByName('babel-loader'));
-
   const babelLoader = matches[1];
-
   const { isAdded } = addAfterLoader(
     config,
     loaderByName('babel-loader'),
     loader,
   );
-
   if (!isAdded) {
     throw new Error(`${loader.loader} was not added!`);
   }
@@ -106,13 +95,11 @@ const replaceBabel = (config, loader, onlySrc = false) => {
   const { removedCount } = removeLoaders(config, loaderByName('babel-loader'));
   if (removedCount !== 2)
     throw new Error('had expected to remove 2 babel loader instances');
-
   if (onlySrc) {
     const index = findLoader(config, loader);
     config.module.rules[1].oneOf.splice(index + 1, 0, babelLoader.loader);
   }
 };
-
 const findLoader = (config, loader) => {
   const test = el => el.loader === loader.loader;
   const index = config.module.rules[1].oneOf.findIndex(test);
