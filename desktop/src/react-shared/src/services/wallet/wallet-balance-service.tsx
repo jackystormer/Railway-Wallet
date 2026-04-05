@@ -9,6 +9,7 @@ import {
   removeUndefineds,
   TXIDVersion,
 } from '@railgun-community/shared-models';
+import { JsonRpcProvider } from 'ethers';
 import { ReactConfig } from '../../config';
 import { SharedConstants } from '../../config/shared-constants';
 import { DEFAULT_WALLET_TOKENS_FOR_NETWORK } from '../../models/default-tokens';
@@ -73,10 +74,9 @@ import {
   getNFTsAndMetadata,
   pullOwnedNFTMetadata,
 } from '../api/alchemy/alchemy-nft';
-import { StorageService } from '../storage/storage-service';
-import { JsonRpcProvider } from 'ethers';
-import { ProviderService } from '../providers/provider-service';
 import { multicallERC20BalanceOf } from '../providers/multicall';
+import { ProviderService } from '../providers/provider-service';
+import { StorageService } from '../storage/storage-service';
 import { getWalletBaseTokenBalance } from '../token/base-token';
 import { getERC20Balance } from '../token/erc20';
 import { OmittedPrivateTokensService } from '../token/omitted-private-tokens-service';

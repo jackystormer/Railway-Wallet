@@ -1,11 +1,11 @@
-import { Network, isDefined, removeUndefineds } from '@railgun-community/shared-models';
+import { isDefined, Network, removeUndefineds } from '@railgun-community/shared-models';
 import { JsonRpcProvider } from 'ethers';
-import { AppDispatch } from '../../redux-store/store';
-import { AvailableWallet } from '../../models/wallet';
 import { ERC20Balance, ERC20Token } from '../../models/token';
-import { ProviderService } from '../providers/provider-service';
-import { multicallERC20BalanceOf } from '../providers/multicall';
+import { AvailableWallet } from '../../models/wallet';
 import { updateERC20BalancesNetwork } from '../../redux-store/reducers/erc20-balance-reducer-network';
+import { AppDispatch } from '../../redux-store/store';
+import { multicallERC20BalanceOf } from '../providers/multicall';
+import { ProviderService } from '../providers/provider-service';
 import { updateSingleERC20BalanceNetwork } from '../wallet/wallet-balance-service';
 
 export type BalanceUpdateSchedulerOptions = {

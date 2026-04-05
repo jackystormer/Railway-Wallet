@@ -19,6 +19,7 @@ import { updateERC20BalancesNetwork } from '../../redux-store/reducers/erc20-bal
 import { enqueueAsyncToast } from '../../redux-store/reducers/toast-reducer';
 import { AppDispatch, store } from '../../redux-store/store';
 import { padAddressForTopicFilter } from '../../utils/address';
+import { logDev } from '../../utils/logging';
 import { getNFTAmountDisplayName } from '../../utils/nft';
 import {
   baseTokenForWallet,
@@ -30,7 +31,6 @@ import {
   getDecimalBalanceString,
   shortenWalletAddress,
 } from '../../utils/util';
-import { logDev } from '../../utils/logging';
 import { ProviderService } from '../providers/provider-service';
 import { getERC20Decimals } from '../token';
 import { getWalletBaseTokenBalance } from '../token/base-token';

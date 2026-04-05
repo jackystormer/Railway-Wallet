@@ -19,7 +19,7 @@ import {
 import { openShieldPOICountdownToast } from '../../redux-store';
 import { setTransactions } from '../../redux-store/reducers/saved-transactions-reducer';
 import { enqueueAsyncToast } from '../../redux-store/reducers/toast-reducer';
-import { AppDispatch } from '../../redux-store/store';
+import { AppDispatch , store } from '../../redux-store/store';
 import { logDev, logDevError } from '../../utils/logging';
 import { poll } from '../../utils/promises';
 import {
@@ -42,7 +42,6 @@ import {
   pullActiveWalletBalancesForNetwork,
   updateSingleERC20BalanceNetwork,
 } from '../wallet/wallet-balance-service';
-import { store } from '../../redux-store/store';
 import { storeShieldCountdownTx } from './poi-shield-countdown';
 
 type RelayAdaptErrorGetter = (
