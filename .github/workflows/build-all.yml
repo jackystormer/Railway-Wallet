@@ -23,7 +23,7 @@ jobs:
         env:
           CI: false
           DISABLE_ESLINT_PLUGIN: true
-          REACT_APP_VERSION: ${{ github.ref_name }}
+          REACT_APP_VERSION: 5.24.16
       - uses: actions/upload-artifact@v4
         with:
           name: railway-windows
@@ -51,7 +51,7 @@ jobs:
         env:
           CI: false
           DISABLE_ESLINT_PLUGIN: true
-          REACT_APP_VERSION: ${{ github.ref_name }}
+          REACT_APP_VERSION: 5.24.16
           CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
         with:
@@ -82,7 +82,7 @@ jobs:
         env:
           CI: false
           DISABLE_ESLINT_PLUGIN: true
-          REACT_APP_VERSION: ${{ github.ref_name }}
+          REACT_APP_VERSION: 5.24.16
       - uses: actions/upload-artifact@v4
         with:
           name: railway-linux
