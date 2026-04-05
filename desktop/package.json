@@ -210,8 +210,7 @@
         "AppImage",
         "snap",
         "deb",
-        "rpm",
-        "pacman"
+        "rpm"
       ],
       "publish": {
         "provider": "github",
