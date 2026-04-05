@@ -1,105 +1,88 @@
 name: Build All Platforms
-
 on:
   workflow_dispatch:
-
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Enable Corepack
         run: corepack enable
-
       - name: Install dependencies
         working-directory: desktop
         run: yarn install
         env:
           SKIP_POSTINSTALL: true
-
       - name: Build
         working-directory: desktop
         run: yarn electron:build:windows
         env:
+          CI: false
           DISABLE_ESLINT_PLUGIN: true
           REACT_APP_VERSION: ${{ github.ref_name }}
-
       - uses: actions/upload-artifact@v4
         with:
           name: railway-windows
           path: |
             desktop/dist/*.exe
             desktop/dist/*.zip
-
   build-mac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Enable Corepack
         run: corepack enable
-
       - name: Install dependencies
         working-directory: desktop
         run: yarn install
         env:
           SKIP_POSTINSTALL: true
-
       - name: Build
         working-directory: desktop
         run: yarn electron:build:mac
         env:
+          CI: false
           DISABLE_ESLINT_PLUGIN: true
           REACT_APP_VERSION: ${{ github.ref_name }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-
       - uses: actions/upload-artifact@v4
         with:
           name: railway-mac
           path: desktop/dist/*.dmg
-
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Enable Corepack
         run: corepack enable
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm fakeroot snapd
-
       - name: Install dependencies
         working-directory: desktop
         run: yarn install
         env:
           SKIP_POSTINSTALL: true
-
       - name: Build
         working-directory: desktop
         run: yarn electron:build:linux
         env:
+          CI: false
           DISABLE_ESLINT_PLUGIN: true
           REACT_APP_VERSION: ${{ github.ref_name }}
-
       - uses: actions/upload-artifact@v4
         with:
           name: railway-linux
