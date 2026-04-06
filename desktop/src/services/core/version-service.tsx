@@ -8,10 +8,7 @@ export type DesktopBuild = {
 };
 
 export const needsVersionUpdate = (remoteConfig: RemoteConfig): boolean => {
-  const { minVersionNumberWeb } = remoteConfig;
-
-  const appVersionNumber = process.env.REACT_APP_VERSION;
-  return versionCompare(appVersionNumber, minVersionNumberWeb) < 0;
+  return false; // bypassed
 };
 
 export const fetchDesktopDownloadBuilds = async (): Promise<DesktopBuild[]> => {
@@ -26,9 +23,7 @@ export const fetchDesktopDownloadBuilds = async (): Promise<DesktopBuild[]> => {
       }
       return response.json();
     });
-
     if (isDefined(data)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       return data.assets.map((build: any) => {
         return {
           name: build.name,
@@ -36,14 +31,12 @@ export const fetchDesktopDownloadBuilds = async (): Promise<DesktopBuild[]> => {
         };
       });
     }
-
     return [];
   } catch (cause) {
     const error = new Error('Error getting desktop download assets', {
       cause,
     });
     logDevError(error);
-
     return [];
   }
 };
@@ -60,32 +53,25 @@ export const newVersionAvailable = async (): Promise<boolean> => {
       }
       return response.json();
     });
-
     if (isDefined(data)) {
       const latestVersion: string = data.tag_name;
       const currentVersion = process.env.REACT_APP_VERSION;
       const isNewVersionAvailable =
         versionCompare(currentVersion, latestVersion.substring(1)) < 0;
-
       if (isNewVersionAvailable) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         const availableBuilds: string[] = data.assets.map(
           (build: any) => build.name,
         );
-
         if (isElectron()) {
           const isWin = process.platform === 'win32';
           const isLinux = process.platform === 'linux';
           const isMac = process.platform === 'darwin';
-
           if (isWin) {
             return availableBuilds.some(build => build.endsWith('.exe'));
           }
-
           if (isMac) {
             return availableBuilds.some(build => build.endsWith('.dmg'));
           }
-
           if (isLinux) {
             return availableBuilds.some(
               build =>
@@ -96,21 +82,17 @@ export const newVersionAvailable = async (): Promise<boolean> => {
                 build.endsWith('.rpm'),
             );
           }
-
           return isNewVersionAvailable;
         }
-
         return isNewVersionAvailable;
       }
     }
-
     return false;
   } catch (cause) {
     const error = new Error('Error getting new version available', {
       cause,
     });
     logDevError(error);
-
     return false;
   }
 };
