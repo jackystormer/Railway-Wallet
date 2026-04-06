@@ -25,6 +25,7 @@ import {
   BroadcasterStatusCallbackData,
   BroadcasterSupportsERC20TokenParams,
 } from '@react-shared';
+import { multiaddr } from '@multiformats/multiaddr';
 import { BroadcasterFindRandomBroadcasterForTokenParams } from '../react-shared/src';
 import { sendWakuError, sendWakuMessage } from './loggers';
 import { bridgeRegisterCall, triggerBridgeEvent } from './worker-ipc-service';
@@ -65,6 +66,60 @@ const waitForWakuAndDialPeers = async (
       sendWakuError(err instanceof Error ? err : new Error(String(err)));
     }
   }
+};
+
+/**
+ * Periodically checks whether each additional direct peer is still connected.
+ * If a peer has dropped from the peer table, re-dials it. This handles:
+ * - Peers silently disappearing from the peer table
+ * - Waku restarts (reinitWaku) that create a new LightNode without re-dialing
+ * - Initial dial failures
+ */
+const startDirectPeerHealthCheck = (peerMultiaddrs: string[]): void => {
+  if (peerMultiaddrs.length === 0) {
+    return;
+  }
+
+  const HEALTH_CHECK_INTERVAL_MS = 60_000;
+
+  const peerEntries = peerMultiaddrs.map(ma => ({
+    multiaddr: ma,
+    peerId: multiaddr(ma).getComponents().find(c => c.name === 'p2p')?.value ?? null,
+  }));
+
+  setInterval(async () => {
+    const waku = WakuBroadcasterClient.getWakuCore();
+    if (!waku || !waku.isStarted()) {
+      return;
+    }
+
+    const connectedPeerIds = new Set(
+      waku.libp2p
+        .getPeers()
+        .map((p: { toString(): string }) => p.toString()),
+    );
+
+    for (const entry of peerEntries) {
+      if (entry.peerId == null) {
+        continue;
+      }
+      if (connectedPeerIds.has(entry.peerId)) {
+        continue;
+      }
+
+      sendWakuMessage(
+        `Direct peer disconnected, re-dialing: ${entry.multiaddr}`,
+      );
+      try {
+        await waku.dial(entry.multiaddr);
+        sendWakuMessage(`Reconnected to direct peer: ${entry.multiaddr}`);
+      } catch (err) {
+        sendWakuError(
+          err instanceof Error ? err : new Error(String(err)),
+        );
+      }
+    }
+  }, HEALTH_CHECK_INTERVAL_MS);
 };
 
 const onBroadcasterStatusCallback = (data: BroadcasterStatusCallbackData) => {
@@ -119,11 +174,15 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
     // Ensure any remaining dial attempts complete after start succeeds.
     await dialPromise.catch(() => {});
 
+    // Start periodic health check for direct peers so they are re-dialed
+    // if they drop from the peer table or after a Waku restart.
+    startDirectPeerHealthCheck(additionalDirectPeers ?? []);
+
     return {};
   },
 );
 
-bridgeRegisterCall<
+bridgeRegisterCall
   Record<string, never>, BroadcasterActionData
 >(BridgeCallEvent.BroadcasterTryReconnect, async () => {
   try {
@@ -148,7 +207,7 @@ bridgeRegisterCall<BroadcasterSetChainParams, void>(
   },
 );
 
-bridgeRegisterCall<
+bridgeRegisterCall
   BroadcasterFindBestBroadcasterParams,
   Optional<SelectedBroadcaster>
 >(
@@ -161,7 +220,7 @@ bridgeRegisterCall<
     );
   },
 );
-bridgeRegisterCall<
+bridgeRegisterCall
   BroadcasterFindRandomBroadcasterForTokenParams,
   Optional<SelectedBroadcaster>
 >(
@@ -176,7 +235,7 @@ bridgeRegisterCall<
   },
 );
 
-bridgeRegisterCall<
+bridgeRegisterCall
   BroadcasterFindAllBroadcastersForTokenParams,
   Optional<SelectedBroadcaster[]>
 >(
@@ -190,7 +249,7 @@ bridgeRegisterCall<
   },
 );
 
-bridgeRegisterCall<
+bridgeRegisterCall
   BroadcasterFindAllBroadcastersForChainParams,
   Optional<SelectedBroadcaster[]>
 >(
@@ -203,33 +262,33 @@ bridgeRegisterCall<
   },
 );
 
-bridgeRegisterCall<
+bridgeRegisterCall
   Record<string, never>, number
 >(BridgeCallEvent.BroadcasterGetMeshPeerCount, async () => {
   return WakuBroadcasterClient.getMeshPeerCount();
 });
 
-bridgeRegisterCall<
+bridgeRegisterCall
   Record<string, never>, number
 >(BridgeCallEvent.BroadcasterGetPubSubPeerCount, async () => {
   return WakuBroadcasterClient.getPubSubPeerCount();
 });
 
-bridgeRegisterCall<
+bridgeRegisterCall
   Record<string, never>, number
 >(BridgeCallEvent.BroadcasterGetLightPushPeerCount, async () => {
   const peerCount = await WakuBroadcasterClient.getLightPushPeerCount();
   return peerCount;
 });
 
-bridgeRegisterCall<
+bridgeRegisterCall
   Record<string, never>, number
 >(BridgeCallEvent.BroadcasterGetFilterPeerCount, async () => {
   const peerCount = await WakuBroadcasterClient.getFilterPeerCount();
   return peerCount;
 });
 
-bridgeRegisterCall<
+bridgeRegisterCall
   BroadcasterBroadcastTransactionParams,
   BroadcasterSendActionData
 >(
