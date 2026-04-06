@@ -159,9 +159,6 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
       peerDiscoveryTimeout,
       poiActiveListKeys,
     };
-    // Start dialing direct peers concurrently. The helper polls for the
-    // Waku core (set before waitForPeers blocks), so the dialed peers can
-    // satisfy peer requirements even if fleet bootstrap fails.
     const dialPromise = waitForWakuAndDialPeers(additionalDirectPeers ?? []);
 
     await WakuBroadcasterClient.start(
@@ -171,7 +168,6 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
       broadcasterDebugger,
     );
 
-    // Ensure any remaining dial attempts complete after start succeeds.
     await dialPromise.catch(() => {});
 
     // Start periodic health check for direct peers so they are re-dialed
@@ -182,9 +178,7 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
   },
 );
 
-bridgeRegisterCall
-  Record<string, never>, BroadcasterActionData
->(BridgeCallEvent.BroadcasterTryReconnect, async () => {
+bridgeRegisterCall<Record<string, never>, BroadcasterActionData>(BridgeCallEvent.BroadcasterTryReconnect, async () => {
   try {
     await WakuBroadcasterClient.tryReconnect();
     return {};
@@ -207,10 +201,7 @@ bridgeRegisterCall<BroadcasterSetChainParams, void>(
   },
 );
 
-bridgeRegisterCall
-  BroadcasterFindBestBroadcasterParams,
-  Optional<SelectedBroadcaster>
->(
+bridgeRegisterCall<BroadcasterFindBestBroadcasterParams, Optional<SelectedBroadcaster>>(
   BridgeCallEvent.BroadcasterFindBestBroadcaster,
   async ({ chain, tokenAddress, useRelayAdapt }) => {
     return WakuBroadcasterClient.findBestBroadcaster(
@@ -220,10 +211,8 @@ bridgeRegisterCall
     );
   },
 );
-bridgeRegisterCall
-  BroadcasterFindRandomBroadcasterForTokenParams,
-  Optional<SelectedBroadcaster>
->(
+
+bridgeRegisterCall<BroadcasterFindRandomBroadcasterForTokenParams, Optional<SelectedBroadcaster>>(
   BridgeCallEvent.BroadcasterFindRandomBroadcasterForToken,
   async ({ chain, tokenAddress, useRelayAdapt, percentage }) => {
     return WakuBroadcasterClient.findRandomBroadcasterForToken(
@@ -235,10 +224,7 @@ bridgeRegisterCall
   },
 );
 
-bridgeRegisterCall
-  BroadcasterFindAllBroadcastersForTokenParams,
-  Optional<SelectedBroadcaster[]>
->(
+bridgeRegisterCall<BroadcasterFindAllBroadcastersForTokenParams, Optional<SelectedBroadcaster[]>>(
   BridgeCallEvent.BroadcasterFindAllBroadcastersForToken,
   async ({ chain, tokenAddress, useRelayAdapt }) => {
     return WakuBroadcasterClient.findBroadcastersForToken(
@@ -249,10 +235,7 @@ bridgeRegisterCall
   },
 );
 
-bridgeRegisterCall
-  BroadcasterFindAllBroadcastersForChainParams,
-  Optional<SelectedBroadcaster[]>
->(
+bridgeRegisterCall<BroadcasterFindAllBroadcastersForChainParams, Optional<SelectedBroadcaster[]>>(
   BridgeCallEvent.BroadcasterFindAllBroadcastersForChain,
   async ({ chain, useRelayAdapt }) => {
     return WakuBroadcasterClient.findAllBroadcastersForChain(
@@ -262,36 +245,25 @@ bridgeRegisterCall
   },
 );
 
-bridgeRegisterCall
-  Record<string, never>, number
->(BridgeCallEvent.BroadcasterGetMeshPeerCount, async () => {
+bridgeRegisterCall<Record<string, never>, number>(BridgeCallEvent.BroadcasterGetMeshPeerCount, async () => {
   return WakuBroadcasterClient.getMeshPeerCount();
 });
 
-bridgeRegisterCall
-  Record<string, never>, number
->(BridgeCallEvent.BroadcasterGetPubSubPeerCount, async () => {
+bridgeRegisterCall<Record<string, never>, number>(BridgeCallEvent.BroadcasterGetPubSubPeerCount, async () => {
   return WakuBroadcasterClient.getPubSubPeerCount();
 });
 
-bridgeRegisterCall
-  Record<string, never>, number
->(BridgeCallEvent.BroadcasterGetLightPushPeerCount, async () => {
+bridgeRegisterCall<Record<string, never>, number>(BridgeCallEvent.BroadcasterGetLightPushPeerCount, async () => {
   const peerCount = await WakuBroadcasterClient.getLightPushPeerCount();
   return peerCount;
 });
 
-bridgeRegisterCall
-  Record<string, never>, number
->(BridgeCallEvent.BroadcasterGetFilterPeerCount, async () => {
+bridgeRegisterCall<Record<string, never>, number>(BridgeCallEvent.BroadcasterGetFilterPeerCount, async () => {
   const peerCount = await WakuBroadcasterClient.getFilterPeerCount();
   return peerCount;
 });
 
-bridgeRegisterCall
-  BroadcasterBroadcastTransactionParams,
-  BroadcasterSendActionData
->(
+bridgeRegisterCall<BroadcasterBroadcastTransactionParams, BroadcasterSendActionData>(
   BridgeCallEvent.BroadcasterBroadcastTransaction,
   async ({
     txidVersionForInputs,
