@@ -1,0 +1,21 @@
+diff --git a/desktop/src/services/remote-config/remote-config-service.tsx b/desktop/src/services/remote-config/remote-config-service.tsx
+index 31cf083..6631330 100644
+--- a/desktop/src/services/remote-config/remote-config-service.tsx
++++ b/desktop/src/services/remote-config/remote-config-service.tsx
+@@ -50,7 +50,8 @@ export class RemoteConfigService {
+     }
+ 
+     try {
+-      const config: RemoteConfig = data;
++      let config: RemoteConfig = data;
++      config.trustedFeeSigner = '';
+       this.dispatch(setRemoteConfig(config));
+       return config;
+     } catch (err) {
+@@ -60,4 +61,4 @@ export class RemoteConfigService {
+       );
+     }
+   }
+-}
++}
+\ No newline at end of file
