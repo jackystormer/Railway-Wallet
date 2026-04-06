@@ -93,7 +93,7 @@ export const SelectBroadcasterList: React.FC<Props> = ({
           <div className={styles.descriptionContainer}>
             <Text
               className={styles.descriptionTextStyle}
-            >{`Reliability: ${reliabilityDescription}`}</Text>
+            >{`Reliability: ${reliabilityDescription} ...${broadcaster.railgunAddress.slice(-4)}`}</Text>
           </div>
         }
         descriptionClassName={styles.descriptionStyle}
