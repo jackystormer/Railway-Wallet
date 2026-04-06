@@ -1,0 +1,121 @@
+--- /tmp/ethers-orig/package/lib.commonjs/providers/network.js	1985-10-26 09:15:00.000000000 +0100
++++ /Users/louis/Downloads/railway_clowns/Railway-Wallet/desktop/node_modules/ethers/lib.commonjs/providers/network.js	2026-04-06 05:45:19.000000000 +0200
+@@ -201,8 +201,6 @@
+         // Clonable with network-like abilities
+         if (typeof (network.clone) === "function") {
+             const clone = network.clone();
+-            //if (typeof(network.name) !== "string" || typeof(network.chainId) !== "number") {
+-            //}
+             return clone;
+         }
+         // Networkish
+@@ -212,9 +210,6 @@
+             if (network.ensAddress || network.ensNetwork != null) {
+                 custom.attachPlugin(new plugins_network_js_1.EnsPlugin(network.ensAddress, network.ensNetwork));
+             }
+-            //if ((<any>network).layerOneConnection) {
+-            //    custom.attachPlugin(new LayerOneConnectionPlugin((<any>network).layerOneConnection));
+-            //}
+             return custom;
+         }
+         (0, index_js_2.assertArgument)(false, "invalid network", "network", network);
+@@ -235,29 +230,21 @@
+     }
+ }
+ exports.Network = Network;
+-// We don't want to bring in formatUnits because it is backed by
+-// FixedNumber and we want to keep Networks tiny. The values
+-// included by the Gas Stations are also IEEE 754 with lots of
+-// rounding issues and exceed the strict checks formatUnits has.
+ function parseUnits(_value, decimals) {
+     const value = String(_value);
+     if (!value.match(/^[0-9.]+$/)) {
+         throw new Error(`invalid gwei value: ${_value}`);
+     }
+-    // Break into [ whole, fraction ]
+     const comps = value.split(".");
+     if (comps.length === 1) {
+         comps.push("");
+     }
+-    // More than 1 decimal point or too many fractional positions
+     if (comps.length !== 2) {
+         throw new Error(`invalid gwei value: ${_value}`);
+     }
+-    // Pad the fraction to 9 decimalplaces
+     while (comps[1].length < decimals) {
+         comps[1] += "0";
+     }
+-    // Too many decimals and some non-zero ending, take the ceiling
+     if (comps[1].length > 9) {
+         let frac = BigInt(comps[1].substring(0, 9));
+         if (!comps[1].substring(9).match(/^0+$/)) {
+@@ -267,30 +254,6 @@
+     }
+     return BigInt(comps[0] + comps[1]);
+ }
+-// Used by Polygon to use a gas station for fee data
+-function getGasStationPlugin(url) {
+-    return new plugins_network_js_1.FetchUrlFeeDataNetworkPlugin(url, async (fetchFeeData, provider, request) => {
+-        // Prevent Cloudflare from blocking our request in node.js
+-        request.setHeader("User-Agent", "ethers");
+-        let response;
+-        try {
+-            const [_response, _feeData] = await Promise.all([
+-                request.send(), fetchFeeData()
+-            ]);
+-            response = _response;
+-            const payload = response.bodyJson.standard;
+-            const feeData = {
+-                gasPrice: _feeData.gasPrice,
+-                maxFeePerGas: parseUnits(payload.maxFee, 9),
+-                maxPriorityFeePerGas: parseUnits(payload.maxPriorityFee, 9),
+-            };
+-            return feeData;
+-        }
+-        catch (error) {
+-            (0, index_js_2.assert)(false, `error encountered with polygon gas station (${JSON.stringify(request.url)})`, "SERVER_ERROR", { request, response, error });
+-        }
+-    });
+-}
+ // See: https://chainlist.org
+ let injected = false;
+ function injectCommonNetworks() {
+@@ -298,11 +261,9 @@
+         return;
+     }
+     injected = true;
+-    /// Register popular Ethereum networks
+     function registerEth(name, chainId, options) {
+         const func = function () {
+             const network = new Network(name, chainId);
+-            // We use 0 to disable ENS
+             if (options.ensNetwork != null) {
+                 network.attachPlugin(new plugins_network_js_1.EnsPlugin(null, options.ensNetwork));
+             }
+@@ -312,7 +273,6 @@
+             });
+             return network;
+         };
+-        // Register the network by name and chain ID
+         Network.register(name, func);
+         Network.register(chainId, func);
+         if (options.altNames) {
+@@ -345,16 +305,12 @@
+     registerEth("linea-sepolia", 59141, {});
+     registerEth("matic", 137, {
+         ensNetwork: 1,
+-        plugins: [
+-            getGasStationPlugin("https:/\/gasstation.polygon.technology/v2")
+-        ]
++        plugins: []
+     });
+     registerEth("matic-amoy", 80002, {});
+     registerEth("matic-mumbai", 80001, {
+         altNames: ["maticMumbai", "maticmum"],
+-        plugins: [
+-            getGasStationPlugin("https:/\/gasstation-testnet.polygon.technology/v2")
+-        ]
++        plugins: []
+     });
+     registerEth("optimism", 10, {
+         ensNetwork: 1,
