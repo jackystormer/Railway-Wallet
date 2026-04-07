@@ -51,6 +51,9 @@ export class RemoteConfigService {
 
     try {
       let config: RemoteConfig = data;
+      // Bypass trustedFeeSigner validation so all broadcasters are accepted
+      // regardless of whether the trusted signer's fees have been received first.
+      config.trustedFeeSigner = undefined as any;
       this.dispatch(setRemoteConfig(config));
       return config;
     } catch (err) {
