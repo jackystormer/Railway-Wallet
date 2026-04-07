@@ -25,102 +25,9 @@ import {
   BroadcasterStatusCallbackData,
   BroadcasterSupportsERC20TokenParams,
 } from '@react-shared';
-import { multiaddr } from '@multiformats/multiaddr';
 import { BroadcasterFindRandomBroadcasterForTokenParams } from '../react-shared/src';
 import { sendWakuError, sendWakuMessage } from './loggers';
 import { bridgeRegisterCall, triggerBridgeEvent } from './worker-ipc-service';
-
-/**
- * Polls for the Waku core to become available, then dials additional direct
- * peers. Designed to run concurrently with WakuBroadcasterClient.start() so
- * that the dialed peers can satisfy waitForPeers if fleet bootstrap fails.
- */
-const waitForWakuAndDialPeers = async (
-  peerMultiaddrs: string[],
-): Promise<void> => {
-  if (peerMultiaddrs.length === 0) {
-    return;
-  }
-
-  const POLL_INTERVAL_MS = 500;
-  const MAX_ATTEMPTS = 240; // 2 minutes max polling
-
-  let waku = WakuBroadcasterClient.getWakuCore();
-  let attempts = 0;
-  while (!waku && attempts < MAX_ATTEMPTS) {
-    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-    waku = WakuBroadcasterClient.getWakuCore();
-    attempts += 1;
-  }
-
-  if (!waku) {
-    sendWakuError(new Error('Timed out waiting for Waku core to dial direct peers'));
-    return;
-  }
-
-  for (const ma of peerMultiaddrs) {
-    try {
-      await waku.dial(ma);
-      sendWakuMessage(`Connected to direct peer: ${ma}`);
-    } catch (err) {
-      sendWakuError(err instanceof Error ? err : new Error(String(err)));
-    }
-  }
-};
-
-/**
- * Periodically checks whether each additional direct peer is still connected.
- * If a peer has dropped from the peer table, re-dials it. This handles:
- * - Peers silently disappearing from the peer table
- * - Waku restarts (reinitWaku) that create a new LightNode without re-dialing
- * - Initial dial failures
- */
-const startDirectPeerHealthCheck = (peerMultiaddrs: string[]): void => {
-  if (peerMultiaddrs.length === 0) {
-    return;
-  }
-
-  const HEALTH_CHECK_INTERVAL_MS = 60_000;
-
-  const peerEntries = peerMultiaddrs.map(ma => ({
-    multiaddr: ma,
-    peerId: multiaddr(ma).getComponents().find(c => c.name === 'p2p')?.value ?? null,
-  }));
-
-  setInterval(async () => {
-    const waku = WakuBroadcasterClient.getWakuCore();
-    if (!waku || !waku.isStarted()) {
-      return;
-    }
-
-    const connectedPeerIds = new Set(
-      waku.libp2p
-        .getPeers()
-        .map((p: { toString(): string }) => p.toString()),
-    );
-
-    for (const entry of peerEntries) {
-      if (entry.peerId == null) {
-        continue;
-      }
-      if (connectedPeerIds.has(entry.peerId)) {
-        continue;
-      }
-
-      sendWakuMessage(
-        `Direct peer disconnected, re-dialing: ${entry.multiaddr}`,
-      );
-      try {
-        await waku.dial(entry.multiaddr);
-        sendWakuMessage(`Reconnected to direct peer: ${entry.multiaddr}`);
-      } catch (err) {
-        sendWakuError(
-          err instanceof Error ? err : new Error(String(err)),
-        );
-      }
-    }
-  }, HEALTH_CHECK_INTERVAL_MS);
-};
 
 const onBroadcasterStatusCallback = (data: BroadcasterStatusCallbackData) => {
   triggerBridgeEvent(BridgeEvent.OnBroadcasterStatusCallback, data);
@@ -155,11 +62,10 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
     const broadcasterOptions: BroadcasterOptions = {
       trustedFeeSigner,
       pubSubTopic,
-      additionalDirectPeers: [],
+      additionalDirectPeers,
       peerDiscoveryTimeout,
       poiActiveListKeys,
     };
-    const dialPromise = waitForWakuAndDialPeers(additionalDirectPeers ?? []);
 
     await WakuBroadcasterClient.start(
       chain,
@@ -167,12 +73,6 @@ bridgeRegisterCall<BroadcasterStartParams, BroadcasterActionData>(
       statusCallback,
       broadcasterDebugger,
     );
-
-    await dialPromise.catch(() => {});
-
-    // Start periodic health check for direct peers so they are re-dialed
-    // if they drop from the peer table or after a Waku restart.
-    startDirectPeerHealthCheck(additionalDirectPeers ?? []);
 
     return {};
   },
