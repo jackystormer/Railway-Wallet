@@ -50,7 +50,7 @@ export class RemoteConfigService {
     }
 
     try {
-      const config: RemoteConfig = data;
+      let config: RemoteConfig = data;
       this.dispatch(setRemoteConfig(config));
       return config;
     } catch (err) {
